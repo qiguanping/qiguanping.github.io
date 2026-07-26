@@ -1,0 +1,28 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+const posts = (await getCollection("blog")).sort((a, b) => a.data.order - b.data.order);
+const groups = new Map<string, typeof posts>();
+for (const post of posts) {
+  for (const tag of [post.data.topic, ...post.data.tags]) {
+    if (!groups.has(tag)) groups.set(tag, []);
+    groups.get(tag)!.push(post);
+  }
+}
+const sortedGroups = [...groups.entries()].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
+---
+<BaseLayout title="标签" description="按 AI Infra、RDMA 与高性能网络主题浏览文章">
+  <section class="subpage shell">
+    <p class="eyebrow">TOPICS & TAGS</p>
+    <h1>标签</h1>
+    <p class="subpage-intro">按技术主题浏览 Albert's Tech Blog 的全部论文深读。</p>
+    <div class="tag-directory">
+      {sortedGroups.map(([tag, entries]) => (
+        <section id={encodeURIComponent(tag)} class="tag-group">
+          <header><h2>{tag}</h2><span>{entries.length} 篇</span></header>
+          {entries.map((post) => <a href={`/posts/${post.data.slug}/`}><span>{post.data.shortTitle}</span><span>↗</span></a>)}
+        </section>
+      ))}
+    </div>
+  </section>
+</BaseLayout>

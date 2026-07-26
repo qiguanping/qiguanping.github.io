@@ -1,0 +1,40 @@
+---
+const { currentPath = "/" } = Astro.props;
+const navigation = [
+  { label: "首页", href: "/" },
+  { label: "标签", href: "/tags/" },
+  { label: "搜索", href: "/search/" },
+  { label: "关于", href: "/about/" },
+];
+---
+
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="/" aria-label="Albert's Tech Blog 首页">Albert's Tech Blog</a>
+    <nav aria-label="主导航">
+      {navigation.map((item) => (
+        <a href={item.href} class:list={{ active: currentPath === item.href }}>{item.label}</a>
+      ))}
+    </nav>
+    <button class="theme-toggle" type="button" aria-label="切换明暗主题" title="切换明暗主题">
+      <span class="theme-icon" aria-hidden="true">◐</span>
+    </button>
+  </div>
+</header>
+
+<script is:inline>
+  const themeButton = document.querySelector('.theme-toggle');
+  const updateThemeIcon = () => {
+    if (!themeButton) return;
+    const dark = document.documentElement.dataset.theme === 'dark';
+    themeButton.setAttribute('aria-label', dark ? '切换到浅色主题' : '切换到深色主题');
+    themeButton.querySelector('.theme-icon').textContent = dark ? '☀' : '☾';
+  };
+  updateThemeIcon();
+  themeButton?.addEventListener('click', () => {
+    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    localStorage.setItem('albert-theme', next);
+    updateThemeIcon();
+  });
+</script>

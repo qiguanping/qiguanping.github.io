@@ -1,0 +1,39 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+const posts = (await getCollection("blog")).sort((a, b) => a.data.order - b.data.order);
+---
+<BaseLayout title="搜索" description="搜索 Albert's Tech Blog 的文章">
+  <section class="subpage search-page shell">
+    <p class="eyebrow">SEARCH THE BLOG</p>
+    <h1>搜索</h1>
+    <label class="search-box">
+      <span class="sr-only">搜索文章标题、摘要或标签</span>
+      <input type="search" placeholder="搜索 AI Infra、RDMA、KV Cache…" autocomplete="off" data-search-input />
+      <span aria-hidden="true">⌕</span>
+    </label>
+    <p class="search-count" data-search-count>共 {posts.length} 篇文章</p>
+    <div class="search-results">
+      {posts.map((post) => (
+        <article data-search-item data-search-text={`${post.data.title} ${post.data.description} ${post.data.topic} ${post.data.tags.join(" ")}`.toLowerCase()}>
+          <a href={`/posts/${post.data.slug}/`}><h2>{post.data.shortTitle}</h2><p>{post.data.description}</p><span>{[post.data.topic, ...post.data.tags].join(" · ")}</span></a>
+        </article>
+      ))}
+    </div>
+  </section>
+</BaseLayout>
+<script is:inline>
+  const input = document.querySelector('[data-search-input]');
+  const items = [...document.querySelectorAll('[data-search-item]')];
+  const count = document.querySelector('[data-search-count]');
+  input?.addEventListener('input', () => {
+    const query = input.value.trim().toLowerCase();
+    let visible = 0;
+    items.forEach((item) => {
+      const match = !query || (item.dataset.searchText || '').includes(query);
+      item.hidden = !match;
+      if (match) visible += 1;
+    });
+    if (count) count.textContent = query ? `找到 ${visible} 篇文章` : `共 ${items.length} 篇文章`;
+  });
+</script>

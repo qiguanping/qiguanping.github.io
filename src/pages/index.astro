@@ -1,0 +1,127 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const posts = (await getCollection("blog")).sort((a, b) => a.data.order - b.data.order);
+const featuredPosts = posts.filter((post) => post.data.featured).sort((a, b) => a.data.order - b.data.order).slice(0, 3);
+const tags = [...new Set(posts.flatMap((post) => [post.data.topic, ...post.data.tags]))].slice(0, 14);
+const dateLabel = (date: Date) => date.toISOString().slice(0, 10).replaceAll("-", " · ");
+---
+
+<BaseLayout>
+  <div class="home-main shell">
+    <section class="home-featured" aria-label="精选文章">
+      <div class="carousel techhot-carousel" data-carousel aria-roledescription="carousel" aria-label="精选文章">
+        <div class="carousel-viewport">
+          {featuredPosts.map((post, index) => (
+            <article class="featured-slide" data-slide aria-hidden={index === 0 ? "false" : "true"}>
+              <a href={`/posts/${post.data.slug}/`} aria-label={`阅读：${post.data.title}`}>
+                <img src={post.data.cover} alt={post.data.coverAlt} loading={index === 0 ? "eager" : "lazy"} />
+                <div class="featured-caption">
+                  <h1>{post.data.shortTitle}</h1>
+                  <p>{post.data.description}</p>
+                </div>
+              </a>
+            </article>
+          ))}
+        </div>
+        <div class="carousel-controls" aria-label="轮播控制">
+          <button type="button" data-prev aria-label="上一篇">‹</button>
+          <div class="carousel-dots" role="tablist">
+            {featuredPosts.map((post, index) => (
+              <button type="button" role="tab" data-dot={index} aria-label={`跳转到第 ${index + 1} 张：${post.data.shortTitle}`} aria-selected={index === 0 ? "true" : "false"}></button>
+            ))}
+          </div>
+          <button type="button" data-next aria-label="下一篇">›</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="home-tags" aria-labelledby="tags-heading">
+      <p id="tags-heading" class="home-section-label">标签</p>
+      <div class="tag-filter" aria-label="按标签筛选文章">
+        <button type="button" class="active" data-filter="all">全部</button>
+        {tags.map((tag) => <button type="button" data-filter={tag}>{tag}</button>)}
+      </div>
+    </section>
+
+    <section class="home-latest" aria-labelledby="latest-heading">
+      <p id="latest-heading" class="home-section-label">最新文章</p>
+      <div class="article-grid" data-article-list>
+        {posts.map((post) => (
+          <article class="article-card" data-article data-tags={[post.data.topic, ...post.data.tags].join("|")}>
+            <a class="card-image" href={`/posts/${post.data.slug}/`} aria-label={`阅读：${post.data.title}`}>
+              <img src={post.data.cover} alt={post.data.coverAlt} loading="lazy" />
+              <span class="card-image-glow" aria-hidden="true"></span>
+            </a>
+            <div class="card-body">
+              <time datetime={post.data.pubDate.toISOString()}>{dateLabel(post.data.pubDate)}</time>
+              <h2><a href={`/posts/${post.data.slug}/`}>{post.data.shortTitle}</a></h2>
+              <p>{post.data.description}</p>
+              <ul aria-label="文章标签">
+                {[post.data.topic, ...post.data.tags].map((tag) => <li>{tag}</li>)}
+              </ul>
+            </div>
+          </article>
+        ))}
+      </div>
+      <p class="empty-filter" data-empty hidden>该标签下暂无文章。</p>
+    </section>
+  </div>
+</BaseLayout>
+
+<script is:inline>
+  (() => {
+    const carousel = document.querySelector('[data-carousel]');
+    if (carousel) {
+      const slides = [...carousel.querySelectorAll('[data-slide]')];
+      const dots = [...carousel.querySelectorAll('[data-dot]')];
+      let active = 0;
+      let timer;
+      let pointerStart = null;
+      const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const show = (next) => {
+        active = (next + slides.length) % slides.length;
+        slides.forEach((slide, index) => slide.setAttribute('aria-hidden', String(index !== active)));
+        dots.forEach((dot, index) => dot.setAttribute('aria-selected', String(index === active)));
+      };
+      const stop = () => clearInterval(timer);
+      const start = () => {
+        stop();
+        if (!reduced) timer = setInterval(() => show(active + 1), 7000);
+      };
+      carousel.querySelector('[data-prev]')?.addEventListener('click', () => { show(active - 1); start(); });
+      carousel.querySelector('[data-next]')?.addEventListener('click', () => { show(active + 1); start(); });
+      dots.forEach((dot, index) => dot.addEventListener('click', () => { show(index); start(); }));
+      carousel.addEventListener('mouseenter', stop);
+      carousel.addEventListener('mouseleave', start);
+      carousel.addEventListener('focusin', stop);
+      carousel.addEventListener('focusout', start);
+      carousel.addEventListener('pointerdown', (event) => { pointerStart = event.clientX; });
+      carousel.addEventListener('pointerup', (event) => {
+        if (pointerStart === null) return;
+        const distance = event.clientX - pointerStart;
+        if (Math.abs(distance) > 45) show(active + (distance < 0 ? 1 : -1));
+        pointerStart = null;
+        start();
+      });
+      show(0);
+      start();
+    }
+
+    const filters = [...document.querySelectorAll('[data-filter]')];
+    const articles = [...document.querySelectorAll('[data-article]')];
+    const empty = document.querySelector('[data-empty]');
+    filters.forEach((button) => button.addEventListener('click', () => {
+      const filter = button.dataset.filter;
+      filters.forEach((item) => item.classList.toggle('active', item === button));
+      let visible = 0;
+      articles.forEach((article) => {
+        const match = filter === 'all' || (article.dataset.tags || '').split('|').includes(filter);
+        article.hidden = !match;
+        if (match) visible += 1;
+      });
+      if (empty) empty.hidden = visible !== 0;
+    }));
+  })();
+</script>

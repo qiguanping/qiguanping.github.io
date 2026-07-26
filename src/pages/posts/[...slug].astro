@@ -1,0 +1,46 @@
+---
+import { getCollection, render } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("blog");
+  return posts.map((post) => ({ params: { slug: post.data.slug }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content, headings } = await render(post);
+const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
+const published = post.data.pubDate.toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" });
+---
+
+<BaseLayout title={post.data.shortTitle} description={post.data.description} image={post.data.cover}>
+  <article class="article-page">
+    <header class="article-hero shell">
+      <div class="breadcrumb-row">
+        <a href="/">首页</a><span>/</span><a href={`/tags/#${encodeURIComponent(post.data.topic)}`}>{post.data.topic}</a>
+      </div>
+      <div class="article-title-block">
+        <div class="post-meta"><span>{published}</span><span>{post.data.readingMinutes} 分钟阅读</span><span>{post.data.series}</span></div>
+        <h1>{post.data.title}</h1>
+        <p class="article-dek">{post.data.description}</p>
+        <div class="tag-list">{[post.data.topic, ...post.data.tags].map((tag: string) => <a href={`/tags/#${encodeURIComponent(tag)}`}>{tag}</a>)}</div>
+      </div>
+      <figure class="article-cover">
+        <img src={post.data.cover} alt={post.data.coverAlt} />
+        <figcaption>{post.data.coverCaption}</figcaption>
+      </figure>
+    </header>
+
+    <div class="article-layout shell">
+      <aside class="toc" aria-label="文章目录">
+        <p>文章目录</p>
+        <nav>
+          {tocHeadings.map((heading) => (
+            <a class:list={{ nested: heading.depth === 3 }} href={`#${heading.slug}`}>{heading.text}</a>
+          ))}
+        </nav>
+      </aside>
+      <div class="prose"><Content /></div>
+    </div>
+  </article>
+</BaseLayout>
