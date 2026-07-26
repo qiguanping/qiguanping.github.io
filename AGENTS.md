@@ -20,3 +20,7 @@ Consult these guides before working on related tasks:
 - [Adding or managing content](https://docs.astro.build/en/guides/content-collections/)
 - [Adding styles or using Tailwind](https://docs.astro.build/en/guides/styling/)
 - [Supporting multiple languages](https://docs.astro.build/en/guides/internationalization/)
+
+## Efficiency rule for GitHub and platform settings
+
+When the required action is a known, single user-facing platform toggle (for example selecting GitHub Pages → GitHub Actions), provide the exact settings link and the shortest click path immediately. Do not attempt browser automation, troubleshooting, or repeated tool calls unless the user explicitly asks the agent to perform that click on their behalf. Confirm the prerequisite work that is already complete, then stop at the one required user action.
