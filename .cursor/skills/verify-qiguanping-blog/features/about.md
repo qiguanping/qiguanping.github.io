@@ -21,11 +21,12 @@ Preconditions:
 - `verify.sh doctor` reports HTTP 200 and `Albert's Tech Blog`.
 
 - **Load about.** Open `/about/`. Run `.cursor/skills/verify-qiguanping-blog/scripts/verify.sh drive about`. HTTP 200. Saved `about.html` contains `<title>关于 Albert | Albert's Tech Blog</title>`, `<h1>关于 Albert</h1>`, `AI Infra · High-Performance Networking · RDMA`, `https://github.com/qiguanping`, and `联系方式`.
-- **Load RSS.** Open `/rss.xml`. Same `drive about` (or the default `drive`) fetches it. HTTP 200. `Content-Type` includes `application/rss+xml`. Saved `rss.xml` contains `<title>Albert's Tech Blog</title>` (or the escaped `Albert&apos;s Tech Blog` form), `<rss version="2.0">`, `/posts/dualpath/`, and `/posts/mooncake/`.
+- **Load RSS.** Open `/rss.xml`. Same `drive about` (or the default `drive`) fetches it. HTTP 200. `Content-Type` is XML (`text/xml` from `astro preview` of the static file, or `application/rss+xml` from the route handler). Saved `rss.xml` contains `<rss version="2.0">`, `Albert's Tech Blog` or `Albert&apos;s Tech Blog`, `/posts/dualpath/`, and `/posts/mooncake/`.
 - **Proof.** `evidence/about.html`, `evidence/rss.xml`, and `evidence/report.txt` remain after cleanup.
 
 ## Gotchas
 
-- The channel title in RSS is XML-escaped (`Albert&apos;s Tech Blog`). Assert that form or the raw apostrophe, not both as if they were different products.
+- The channel title in RSS is XML-escaped (`Albert&apos;s Tech Blog`). HTML `<title>` uses `Albert&#39;s Tech Blog`. Assert the site name, not a specific escape.
+- After `pnpm build`, `/rss.xml` is a static file. `astro preview` typically serves it as `text/xml`, not `application/rss+xml`.
 - About has no posts list. Do not fail about because DualPath is absent on that page.
 - The GitHub link is `https://github.com/qiguanping` with `target="_blank"`. Proving the href is enough; do not require the external profile to load.

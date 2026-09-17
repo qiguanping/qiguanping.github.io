@@ -76,7 +76,7 @@ Harness: `curl` for status + HTML/RSS text. Browser (when available) for client-
 | Post URLs `/posts/<slug>/` (trailing slash) | content collection `slug` |
 | TOC `aria-label="文章目录"` | post |
 | Theme button `aria-label` starts with `切换` | header |
-| RSS `/rss.xml` | footer |
+| RSS `/rss.xml` (XML body; preview may send `text/xml`) | footer |
 
 Do not click by coordinates. Do not assert against `src/data/posts.ts` (not the live collection). Live posts come from `src/content/blog/*/index.md` via `src/content.config.ts`.
 
@@ -99,6 +99,7 @@ Proof standards:
 - Capture the request (URL) and the resulting body/status, not only "server was up".
 - For a mutation (theme toggle, search typing, tag filter), capture before and after. Theme writes `localStorage['albert-theme']`; search updates `[data-search-count]`; filters toggle `[data-article]` `hidden`.
 - Cover images under `/images/...` are referenced in markdown but are not in `public/` in this checkout (only `public/favicon.svg`). A 404 cover is **not** a page failure; do not fail HTML checks on those URLs. Do fail if `favicon.svg` 404s.
+- HTML `<title>` encodes the apostrophe as `Albert&#39;s Tech Blog`. The harness accepts that or a raw `'`.
 - Mocks: none. This site has no auth and no backend.
 
 ## Cleanup

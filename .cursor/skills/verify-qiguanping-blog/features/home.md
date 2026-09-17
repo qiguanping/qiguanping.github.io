@@ -23,7 +23,7 @@ Preconditions:
 - Preview is healthy at `http://127.0.0.1:$VERIFY_PORT/`.
 - `verify.sh doctor` reports HTTP 200 and `Albert's Tech Blog`.
 
-- **Load home.** Open `/`. Run `.cursor/skills/verify-qiguanping-blog/scripts/verify.sh drive home`. HTTP 200. Saved `home.html` contains `<title>Albert's Tech Blog</title>`, `lang="zh-CN"`, `Albert's Tech Blog 首页`, `主导航`, `首页`, `标签`, `搜索`, `关于`, `跳到正文`, `精选文章`, `最新文章`, and `© 2026 Albert.`.
+- **Load home.** Open `/`. Run `.cursor/skills/verify-qiguanping-blog/scripts/verify.sh drive home`. HTTP 200. Saved `home.html` contains `<title>Albert's Tech Blog</title>` (apostrophe may be `&#39;`), `lang="zh-CN"`, `Albert's Tech Blog 首页`, `主导航`, `首页`, `标签`, `搜索`, `关于`, `跳到正文`, `精选文章`, `最新文章`, and `© 2026 Albert.`.
 - **Featured posts.** In the same body, the featured region contains `DualPath：重新利用空闲网卡带宽`, `Mooncake：以 KV Cache 为中心的推理架构`, and `ZCube：自动搜索出来的 AI 集群拓扑`.
 - **Latest grid.** The same body contains those three plus `NCCLX：十万卡 RoCE 上的集合通信重构`, `DeepSeek-V3：受限硬件上的系统协同`, and `Aegis：生产 AI 集群的故障诊断演进`, and includes `/posts/dualpath/` plus `/posts/mooncake/`.
 - **Favicon.** `GET /favicon.svg` is HTTP 200.

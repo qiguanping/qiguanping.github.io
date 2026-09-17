@@ -199,12 +199,13 @@ fetch() {
 contains() {
   local name="$1" needle="$2"
   local file="${EVIDENCE_DIR}/${name}"
+  local escaped="${needle//\'/&#39;}"
   if [[ ! -f "${file}" ]]; then
     fail "${name}: missing file while looking for ${needle}"
     echo "FAIL ${name}: missing file for needle ${needle}" >> "${REPORT}"
     return 1
   fi
-  if grep -Fq "${needle}" "${file}"; then
+  if grep -Fq "${needle}" "${file}" || { [[ "${escaped}" != "${needle}" ]] && grep -Fq "${escaped}" "${file}"; }; then
     pass "${name}: contains ${needle}"
     echo "PASS ${name}: contains ${needle}" >> "${REPORT}"
   else
@@ -213,20 +214,20 @@ contains() {
   fi
 }
 
-header_contains() {
-  local name="$1" needle="$2"
+header_is_xml() {
+  local name="$1"
   local file="${EVIDENCE_DIR}/${name}.headers"
   if [[ ! -f "${file}" ]]; then
-    fail "${name}: missing headers while looking for ${needle}"
-    echo "FAIL ${name}: missing headers for ${needle}" >> "${REPORT}"
+    fail "${name}: missing headers while checking Content-Type"
+    echo "FAIL ${name}: missing headers for Content-Type" >> "${REPORT}"
     return 1
   fi
-  if grep -Fiq "${needle}" "${file}"; then
-    pass "${name}: header ${needle}"
-    echo "PASS ${name}: header ${needle}" >> "${REPORT}"
+  if grep -Ei 'Content-Type:.*(application/rss\+xml|application/xml|text/xml)' "${file}" >/dev/null; then
+    pass "${name}: Content-Type is XML"
+    echo "PASS ${name}: Content-Type is XML" >> "${REPORT}"
   else
-    fail "${name}: missing header ${needle}"
-    echo "FAIL ${name}: missing header ${needle}" >> "${REPORT}"
+    fail "${name}: Content-Type is not XML"
+    echo "FAIL ${name}: Content-Type is not XML" >> "${REPORT}"
   fi
 }
 
@@ -268,7 +269,8 @@ drive_article() {
   contains mooncake.html "<title>Mooncake：以 KV Cache 为中心的推理架构 | Albert's Tech Blog</title>"
   contains mooncake.html "Mooncake 深度解读"
   contains mooncake.html "文章目录"
-  contains mooncake.html "TL;DR"
+  contains mooncake.html "一、引言"
+  contains mooncake.html "44 分钟阅读"
 }
 
 drive_search() {
@@ -307,7 +309,7 @@ drive_about() {
   contains about.html "https://github.com/qiguanping"
   contains about.html "联系方式"
   fetch rss.xml /rss.xml
-  header_contains rss.xml "application/rss+xml"
+  header_is_xml rss.xml
   contains rss.xml '<rss version="2.0">'
   contains rss.xml "/posts/dualpath/"
   contains rss.xml "/posts/mooncake/"
@@ -394,13 +396,18 @@ cmd_cleanup() {
 }
 
 cmd_all() {
+  local rc=0
   cmd_launch
   cmd_doctor
-  cmd_drive baseline
+  cmd_drive baseline || rc=$?
   cmd_cleanup
   if [[ ! -f "${REPORT}" ]]; then
     echo "error: cleanup removed evidence at ${REPORT}" >&2
     exit 1
+  fi
+  if [[ "${rc}" -ne 0 ]]; then
+    echo "all: drive failed; evidence kept at ${REPORT}" >&2
+    exit "${rc}"
   fi
   log "all ok: ${REPORT}"
 }
