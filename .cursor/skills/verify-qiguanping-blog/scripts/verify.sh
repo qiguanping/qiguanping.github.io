@@ -199,13 +199,25 @@ fetch() {
 contains() {
   local name="$1" needle="$2"
   local file="${EVIDENCE_DIR}/${name}"
-  local escaped="${needle//\'/&#39;}"
   if [[ ! -f "${file}" ]]; then
     fail "${name}: missing file while looking for ${needle}"
     echo "FAIL ${name}: missing file for needle ${needle}" >> "${REPORT}"
     return 1
   fi
-  if grep -Fq "${needle}" "${file}" || { [[ "${escaped}" != "${needle}" ]] && grep -Fq "${escaped}" "${file}"; }; then
+  if python3 - "${file}" "${needle}" <<'PY'
+import html, pathlib, sys
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+needle = sys.argv[2]
+variants = {
+    needle,
+    html.unescape(needle),
+    needle.replace("'", "&#39;"),
+    needle.replace("'", "&apos;"),
+    needle.replace("'", "&#x27;"),
+}
+raise SystemExit(0 if any(variant in text for variant in variants) else 1)
+PY
+  then
     pass "${name}: contains ${needle}"
     echo "PASS ${name}: contains ${needle}" >> "${REPORT}"
   else
@@ -351,7 +363,7 @@ cmd_drive() {
   echo "fails: ${FAILS}" >> "${REPORT}"
   if [[ "${FAILS}" -ne 0 ]]; then
     echo "drive failed: ${FAILS} check(s)" >&2
-    exit 1
+    return 1
   fi
   log "drive ok: evidence in ${EVIDENCE_DIR}"
 }
@@ -398,8 +410,10 @@ cmd_cleanup() {
 cmd_all() {
   local rc=0
   cmd_launch
-  cmd_doctor
-  cmd_drive baseline || rc=$?
+  cmd_doctor || rc=$?
+  if [[ "${rc}" -eq 0 ]]; then
+    cmd_drive baseline || rc=$?
+  fi
   cmd_cleanup
   if [[ ! -f "${REPORT}" ]]; then
     echo "error: cleanup removed evidence at ${REPORT}" >&2
